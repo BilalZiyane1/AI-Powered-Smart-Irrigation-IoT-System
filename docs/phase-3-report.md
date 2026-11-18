@@ -35,3 +35,5 @@ capture `tshark` ou `tcpdump`.
 - Un point MQTT a été écrit puis relu dans InfluxDB via l'API Flux.
 - L'expérience fermée a produit 4 lignes CSV avec deux politiques et deux
   graines de simulation.
+- Une expérience complète de 30 jours avec 5 graines a été exécutée.
+  Les résultats agrégés sont dans `results/irrigation/comparison.md`.

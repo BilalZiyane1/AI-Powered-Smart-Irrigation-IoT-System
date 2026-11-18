@@ -51,3 +51,14 @@ agronomique.
 
 Cette phase ne publie pas encore les prédictions par MQTT. Le service ML,
 l'anomaly detection et l'intégration Node-RED seront ajoutés ensuite.
+
+## Résultats +60 / +120 minutes
+
+Des modèles ont été exécutés aux horizons 60 et 120 minutes:
+
+| Horizon | Lignes | Modèle retenu | MAE |
+|---:|---:|---|---:|
+| 60 minutes | 7 861 | Régression linéaire | 1.1246 |
+| 120 minutes | 7 661 | Régression linéaire | 0.8324 |
+
+Les fichiers JSON détaillés sont conservés dans `results/forecasting/`.

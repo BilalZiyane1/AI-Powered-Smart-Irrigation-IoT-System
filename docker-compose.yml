@@ -46,6 +46,53 @@ services:
       influxdb:
         condition: service_healthy
 
+  pump:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    command: ["python", "-m", "src.irrigation.pump_sim", "--mqtt-host", "mosquitto"]
+    ports:
+      - "5683:5683/udp"
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+
+  coap-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    command: ["python", "-m", "src.irrigation.coap_gateway", "--pump-url", "coap://pump:5683", "--port", "8081"]
+    ports:
+      - "8081:8081"
+    depends_on:
+      - pump
+
+  sensor:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    command: ["python", "-m", "src.irrigation.sensor_sim", "--broker-host", "mosquitto", "--broker-port", "1883", "--interval-seconds", "1", "--limit", "100"]
+    volumes:
+      - "./Soil Moisture, Irrigation Actuator and Weather Dat:/app/Soil Moisture, Irrigation Actuator and Weather Dat:ro,Z"
+    environment:
+      PYTHONPATH: /app
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+
+  ml:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    command: ["python", "-m", "src.irrigation.ml_service", "--broker-host", "mosquitto", "--broker-port", "1883", "--horizon-minutes", "60"]
+    volumes:
+      - "./ml/models:/app/ml/models:ro,Z"
+    environment:
+      PYTHONPATH: /app
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+
 volumes:
   mosquitto-data:
   influxdb-data:

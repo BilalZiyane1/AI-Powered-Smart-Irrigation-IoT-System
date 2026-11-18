@@ -19,7 +19,15 @@ LOGGER = logging.getLogger(__name__)
 
 
 class MLService:
-    def __init__(self, *, broker_host: str, broker_port: int, model_path: str, topics: dict[str, str]) -> None:
+    def __init__(
+        self,
+        *,
+        broker_host: str,
+        broker_port: int,
+        model_path: str,
+        topics: dict[str, str],
+        horizon_minutes: int = 60,
+    ) -> None:
         self.topics = topics
         self.model = joblib.load(Path(model_path))
         self.buffer: deque[dict[str, object]] = deque(maxlen=64)
@@ -28,6 +36,7 @@ class MLService:
         self.client.on_connect = self._on_connect
         self.client.on_message = self._on_message
         self.broker_host, self.broker_port = broker_host, broker_port
+        self.horizon_minutes = horizon_minutes
 
     def _on_connect(self, client: mqtt.Client, _userdata: object, _flags: object, reason_code: object, _properties: object = None) -> None:
         if reason_code != 0:
@@ -73,14 +82,16 @@ class MLService:
     def _publish_prediction(self, client: mqtt.Client, payload: dict[str, object]) -> None:
         if len(self.buffer) < 8:
             return
-        frame, _target = add_forecasting_features(pd.DataFrame(self.buffer), horizon_minutes=60)
+        frame, _target = add_forecasting_features(
+            pd.DataFrame(self.buffer), horizon_minutes=self.horizon_minutes
+        )
         row = frame.dropna(subset=list(DEFAULT_FEATURES)).tail(1)
         if row.empty:
             return
         prediction = float(self.model.predict(model_matrix(row))[0])
         client.publish(self.topics["prediction"], json.dumps({
             "timestamp": payload["timestamp"],
-            "horizon_minutes": 60,
+            "horizon_minutes": self.horizon_minutes,
             "predicted_soil_moisture": prediction,
             "model": "linear_regression",
         }), qos=1)
@@ -95,6 +106,7 @@ def main() -> None:
     parser.add_argument("--broker-host", default="localhost")
     parser.add_argument("--broker-port", type=int, default=1883)
     parser.add_argument("--model", default="ml/models/linear_regression_60m.joblib")
+    parser.add_argument("--horizon-minutes", type=int, default=60)
     args = parser.parse_args()
     topics = {
         "soil": "ferme/parcelle1/humidite_sol",
@@ -108,6 +120,7 @@ def main() -> None:
         broker_port=args.broker_port,
         model_path=args.model,
         topics=topics,
+        horizon_minutes=args.horizon_minutes,
     ).run()
 
 
