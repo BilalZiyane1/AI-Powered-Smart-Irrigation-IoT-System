@@ -1,0 +1,52 @@
+services:
+  mosquitto:
+    build: ./mosquitto
+    entrypoint: ["mosquitto"]
+    command: ["-c", "/mosquitto/config/mosquitto.conf"]
+    ports:
+      - "${MQTT_HOST_PORT:-1883}:1883"
+    volumes:
+      - mosquitto-data:/mosquitto/data
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h localhost -t '$$SYS/broker/version' -C 1 -W 3 >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  influxdb:
+    image: docker.io/library/influxdb:2.7
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: irrigation
+      DOCKER_INFLUXDB_INIT_PASSWORD: irrigation-local-password
+      DOCKER_INFLUXDB_INIT_ORG: smart-irrigation
+      DOCKER_INFLUXDB_INIT_BUCKET: telemetry
+      DOCKER_INFLUXDB_INIT_RETENTION: 30d
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: irrigation-local-token
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "influx", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  nodered:
+    build: ./nodered
+    ports:
+      - "1880:1880"
+      - "1881:1881"
+    volumes:
+      - nodered-data:/data
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+
+volumes:
+  mosquitto-data:
+  influxdb-data:
+  nodered-data:

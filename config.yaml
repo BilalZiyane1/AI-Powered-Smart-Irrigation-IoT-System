@@ -1,0 +1,32 @@
+dataset:
+  root: "Soil Moisture, Irrigation Actuator and Weather Dat"
+  processed_template: "02_processed_data/merged/dataset_zone_{sector}.csv"
+  sector: 1
+  timezone: "Europe/Rome"
+  sampling_interval_minutes: 10
+  columns:
+    timestamp: ts
+    soil_moisture: soil_moisture
+    air_temperature: weather_temp
+    rainfall: weather_rain
+    irrigation_duration: irrigation_duration_minutes
+    applied_water: liters_total
+
+mqtt:
+  host: localhost
+  port: 1883
+  qos: 1
+  topics:
+    soil: ferme/parcelle1/humidite_sol
+    weather: ferme/parcelle1/meteo
+    prediction: ferme/parcelle1/prediction
+    anomaly: ferme/parcelle1/anomalie
+    pump_state: ferme/parcelle1/pompe/etat
+    config: ferme/parcelle1/config
+
+irrigation:
+  low_threshold: 40.0
+  high_threshold: 60.0
+  min_activation_interval_minutes: 30
+  max_pump_runtime_minutes: 60
+  mode: rule_based
