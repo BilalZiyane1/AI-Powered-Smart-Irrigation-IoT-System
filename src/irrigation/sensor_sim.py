@@ -16,6 +16,16 @@ from .data_loader import load_config, load_sector_frame, replay_rows
 LOGGER = logging.getLogger(__name__)
 
 
+def is_valid_soil_reading(value: object) -> bool:
+    if value is None:
+        return False
+    try:
+        reading = float(value)
+    except (TypeError, ValueError):
+        return False
+    return 0 <= reading <= 100
+
+
 def publish_replay(
     *,
     config_path: str = "config.yaml",
@@ -42,6 +52,8 @@ def publish_replay(
         for row in replay_rows(frame, config):
             if stopped or (limit is not None and published >= limit):
                 break
+            if not is_valid_soil_reading(row["soil_moisture"]):
+                continue
             timestamp = row["timestamp"]
             soil_payload = {
                 "timestamp": timestamp,

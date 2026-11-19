@@ -9,3 +9,5 @@ ml/models/*.joblib
 Soil Moisture, Irrigation Actuator and Weather Dat/01_raw_data/raw_irrigation_actuators/raw_actuators.csv
 Soil Moisture, Irrigation Actuator and Weather Dat/01_raw_data/raw_irrigation_actuators/raw_measurements.csv
 *.py[cod]
+docs/project-explanation.md
+docs/screenshots/
